@@ -16,6 +16,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Ensure 'static' directory exists before mounting
+STATIC_DIR = "static"
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)  # Create it if missing
+    
 # Mount the static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
