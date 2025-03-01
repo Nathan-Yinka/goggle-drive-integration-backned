@@ -10,9 +10,6 @@ COPY . .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy .env file
-COPY .env .env
-
 # Expose the port from the .env file
 ARG PORT
 ENV PORT=${PORT}
