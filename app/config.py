@@ -11,28 +11,23 @@ APP_VERSION = "1.0.0"
 APP_DESCRIPTION = "FastAPI backend for Google Drive authentication, file uploads, and management."
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-# 🔹 Database Config (Dynamically Handle Password)
 DB_CONFIG = {
     "drivername": "mysql+pymysql",
     "username": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD"),  # Can be None if not set
+    "password": os.getenv("DB_PASSWORD"),  # Can be None or empty
     "host": os.getenv("DB_HOST", "localhost"),
     "port": os.getenv("DB_PORT", "3306"),
-    "database": os.getenv("DB_NAME", "goggle_drive"),
+    "database": os.getenv("DB_NAME", "google_drive"),
 }
 
-# 🔹 Remove password from DB_CONFIG if it's empty or None
-if not DB_CONFIG["password"]:
-    DB_CONFIG.pop("password")
+# Construct the connection URL manually to avoid password masking issues
+if DB_CONFIG["password"]:
+    DATABASE_URL = f"{DB_CONFIG['drivername']}://{DB_CONFIG['username']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
+else:
+    DATABASE_URL = f"{DB_CONFIG['drivername']}://{DB_CONFIG['username']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 
-# 🔹 Construct DATABASE_URL dynamically
-DATABASE_URL = str(URL.create(**DB_CONFIG))
+print("Database URL:", DATABASE_URL)  # Debugging purpose
 
-# 🔹 Redis Config
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
-# Print for debugging
-print(f"🔹 Database URL: {DATABASE_URL}")
 
 # 🔹 Google API Credentials
 CLIENT_ID = os.getenv("CLIENT_ID")
