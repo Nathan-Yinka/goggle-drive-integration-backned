@@ -50,6 +50,13 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(drive_router)
 
+@app.get("/", tags=["Health Check"])
+async def root():
+    """
+    Health check endpoint to confirm the API is running.
+    """
+    return {"message": "Google Drive Integration API is running successfully 🚀"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=True)
