@@ -1,5 +1,7 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
+from fastapi.responses import JSONResponse
+
 from fastapi.middleware.cors import CORSMiddleware
 from app.controllers.auth_controller import router as auth_router
 from app.controllers.drive_controller import router as drive_router
@@ -16,11 +18,21 @@ app = FastAPI(
     version="1.0.0",
 )
 
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request, exc: HTTPException):
+    """
+    Overrides FastAPI's default error format to use 'message' instead of 'detail'.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail},  # Rename 'detail' to 'message'
+    )
+
 # Ensure 'static' directory exists before mounting
 STATIC_DIR = "static"
 if not os.path.exists(STATIC_DIR):
     os.makedirs(STATIC_DIR)  # Create it if missing
-    
+
 # Mount the static directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

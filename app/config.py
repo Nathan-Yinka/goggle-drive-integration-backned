@@ -50,3 +50,5 @@ PORT = int(os.getenv("PORT", 8000))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "info")
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+print(REDIRECT_URI)

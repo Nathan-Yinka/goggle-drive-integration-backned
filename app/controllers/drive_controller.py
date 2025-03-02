@@ -1,13 +1,33 @@
-from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File,HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.middleware import get_current_user
 from app.services.drive_service import (
     list_drive_files, upload_file_to_drive, create_google_file, download_file
 )
+from app.schemas.page_sechema import DrivePaginationRequest
+
 
 router = APIRouter()
 
+
+# @router.get("/drive/files")
+# async def get_drive_files(
+#     user_id: str = Depends(get_current_user),
+#     db: Session = Depends(get_db),
+#     page_token: str = Query(None, description="Token for fetching the next/previous page"),
+#     prev: bool = Query(False, description="Set to true to navigate to the previous page")
+# ):
+#     """
+#     Lists files from Google Drive, supporting pagination.
+#     - Use `page_token` to go to a specific page.
+#     - Use `prev=true` to go to the previous page.
+#     """
+#     try:
+#         result = list_drive_files(db, user_id, page_token, prev)
+#         return result
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/drive/files")
 async def get_drive_files(
@@ -40,7 +60,7 @@ async def download_drive_file_endpoint(
 async def create_file_endpoint(
     title: str = Query(..., description="Title of the file"),
     file_type: str = Query(..., description="File type: 'doc', 'sheet', 'slide', 'form', 'drawing'"),
-    user_email: str = Query(..., description="Email of the user to share the file with"),
+    user_email: str = Query(None, description="Email of the user to share the file with"),
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

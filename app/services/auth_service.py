@@ -156,3 +156,24 @@ def get_google_auth_token_service(db: Session, user_id: str):
         return None
 
     return validate_google_token(db, user_id, token)
+
+def disconnect_google_account(db: Session, user_id: str):
+    """
+    Revokes a user's Google OAuth token and removes stored credentials from the database.
+    """
+    # Fetch stored token
+    token = get_user_google_token(db, user_id)
+    if not token:
+        raise HTTPException(status_code=400, detail="No Google account linked.")
+
+    # Revoke token using Google API
+    revoke_url = f"https://accounts.google.com/o/oauth2/revoke?token={token}"
+    response = requests.post(revoke_url, headers={"Content-Type": "application/x-www-form-urlencoded"})
+    print(response)
+    if response.status_code not in [200, 400]:
+        raise HTTPException(status_code=500, detail="Failed to revoke Google account access.")
+
+    # Remove token from database
+    remove_invalid_token(db, user_id)
+
+    return "Google account disconnected successfully."

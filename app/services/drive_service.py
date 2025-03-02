@@ -36,6 +36,8 @@ CONVERSION_MAP = {
 }
 
 
+user_page_tokens = {}
+
 
 def get_drive_service(db: Session, user_id: str):
     """Authenticate the user and return Google Drive API service with auto-refresh support."""
@@ -76,6 +78,54 @@ def list_drive_files(db: Session, user_id: str, page_token: str = None):
         "files": response.get("files", []),
         "nextPageToken": response.get("nextPageToken")
     }
+
+# def list_drive_files(db: Session, user_id: str, page_token: str = None, prev: bool = False):
+#     """
+#     List files from Google Drive, supporting pagination.
+    
+#     - If `prev=True`, retrieves the last stored page token for previous navigation.
+#     - Stores history of page tokens for navigation.
+#     """
+
+#     drive_service = get_drive_service(db, user_id)
+
+#     # Get the user's stored page history (default to an empty list)
+#     page_history = user_page_tokens.get(user_id, [])
+#     print(page_history)
+#     print(page_history)
+#     print(page_history)
+#     print(page_history)
+
+#     # If this is the first request (no `page_token` and `prev=False`), clear history
+#     if not page_token and not prev:
+#         user_page_tokens[user_id] = []  # Reset history
+
+#     if prev:
+#         if not page_history:
+#             raise HTTPException(status_code=400, detail="No previous page available")
+        
+#         # Get the last stored token and remove it from history
+#         page_token = page_history.pop()
+#         user_page_tokens[user_id] = page_history  # Update history
+
+#     response = drive_service.files().list(
+#         pageSize=10,
+#         fields="nextPageToken, files(id, name, mimeType, webViewLink)",
+#         pageToken=page_token
+#     ).execute()
+
+#     # Save the `nextPageToken` for future navigation (only if not going back)
+#     next_page_token = response.get("nextPageToken")
+#     if next_page_token and not prev:
+#         page_history.append(next_page_token)
+#         user_page_tokens[user_id] = page_history  # Store history
+
+#     return {
+#         "files": response.get("files", []),
+#         "nextPageToken": next_page_token,
+#         "hasPreviousPage": len(page_history) > 0  # True only if there is history
+#     }
+
 
 def upload_file_to_drive(db: Session, user_id: str, file: UploadFile):
     """Upload a file to Google Drive, convert it when possible, and return correct edit/view links."""
@@ -141,8 +191,9 @@ def create_google_file(db: Session, user_id: str, title: str, file_type: str, us
         permission = {
             "type": "user",
             "role": "writer",
-            "emailAddress": user_email,
         }
+        if user_email:
+            permission['emailAddress'] = user_email
         drive_service.permissions().create(fileId=file_id, body=permission, sendNotificationEmail=True).execute()
 
         # Generate edit and embed URLs

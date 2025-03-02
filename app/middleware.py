@@ -4,14 +4,16 @@ from app.database import get_db
 from app.repositories.user_repo import get_user_by_token
 
 async def get_current_user(request: Request, db: Session = Depends(get_db)):
-    """Extracts user from Authorization header and validates token"""
-    # user_token = request.headers.get("Authorization")
+    """
+    Extracts user from 'User-ID' header. 
+    Falls back to user_id = 1 if not provided.
+    """
+    user_id = request.headers.get("User-ID")  # Extract User-ID from headers
 
-    # if not user_token:
-    #     raise HTTPException(status_code=401, detail="User authentication required")
+    if user_id:
+        try:
+            user_id = int(user_id)  # Ensure it's an integer
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid User-ID format")
 
-    # user = get_user_by_token(db, user_token)
-    # if not user:
-    #     raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    return 1  # ✅ Return valid user_id
+    return user_id or 1  # ✅ Use extracted user_id or fallback to 1
