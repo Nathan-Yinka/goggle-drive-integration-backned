@@ -136,6 +136,8 @@ def upload_file_to_drive(db: Session, user_id: str, file: UploadFile):
         media = MediaIoBaseUpload(file_stream, mimetype=file.content_type, resumable=True)
 
         converted_mimeType = CONVERSION_MAP.get(file.content_type, file.content_type)
+        print(file.content_type)
+        print(converted_mimeType)
 
         file_metadata = {
             "name": file.filename,
@@ -149,7 +151,12 @@ def upload_file_to_drive(db: Session, user_id: str, file: UploadFile):
         ).execute()
         file_id = uploaded_file["id"]
         uploaded_mime_type = uploaded_file["mimeType"]
-
+         # ✅ Set file to view-only
+        permission = {
+            "type": "anyone",
+            "role": "reader"  # This ensures view-only access
+        }
+        drive_service.permissions().create(fileId=file_id, body=permission).execute()
         # ✅ Ensure it opens in the correct Google Editor
         open_links = {
             "application/vnd.google-apps.document": f"https://docs.google.com/document/d/{file_id}/edit",
@@ -158,7 +165,7 @@ def upload_file_to_drive(db: Session, user_id: str, file: UploadFile):
         }
 
         edit_link = open_links.get(uploaded_mime_type, f"https://drive.google.com/file/d/{file_id}/view")
-        view_link = f"https://drive.google.com/file/d/{file_id}/view"
+        view_link = f"https://docs.google.com/document/d/{file_id}/view"
 
         return JSONResponse(content={
             "fileId": file_id,
@@ -171,6 +178,49 @@ def upload_file_to_drive(db: Session, user_id: str, file: UploadFile):
         raise HTTPException(status_code=500, detail=f"Google Drive API error: {error}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# def upload_file_to_drive(db: Session, user_id: str, file: UploadFile):
+#     """Upload a file to Google Drive, restrict it to view-only, and ensure it opens in Google Docs."""
+#     drive_service = get_drive_service(db, user_id)
+
+#     try:
+#         file_stream = io.BytesIO(file.file.read())  # Read file into memory
+#         media = MediaIoBaseUpload(file_stream, mimetype=file.content_type, resumable=True)
+
+#         converted_mimeType = CONVERSION_MAP.get(file.content_type, file.content_type)
+
+#         file_metadata = {
+#             "name": file.filename,
+#             "mimeType": converted_mimeType,
+#         }
+
+#         # ✅ Upload file
+#         uploaded_file = drive_service.files().create(
+#             body=file_metadata, media_body=media, fields="id, mimeType"
+#         ).execute()
+#         file_id = uploaded_file["id"]
+#         uploaded_mime_type = uploaded_file["mimeType"]
+
+#         # ✅ Enforce view-only access
+#         permission = {
+#             "type": "anyone",
+#             "role": "reader"  # Ensures only viewing, no editing
+#         }
+#         drive_service.permissions().create(fileId=file_id, body=permission).execute()
+
+#         # ✅ Ensure it only opens in Google Docs for viewing
+#         view_link = f"https://docs.google.com/document/d/{file_id}/view"
+
+#         return JSONResponse(content={
+#             "fileId": file_id,
+#             "fileName": file.filename,
+#             "viewLink": view_link  # ✅ Forces view mode in Google Docs
+#         })
+
+#     except HttpError as error:
+#         raise HTTPException(status_code=500, detail=f"Google Drive API error: {error}")
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 def create_google_file(db: Session, user_id: str, title: str, file_type: str, user_email: str):
     """Create a new Google Docs, Sheets, Slides, Forms, or Drawings file."""
@@ -194,7 +244,8 @@ def create_google_file(db: Session, user_id: str, title: str, file_type: str, us
         }
         if user_email:
             permission['emailAddress'] = user_email
-        drive_service.permissions().create(fileId=file_id, body=permission, sendNotificationEmail=True).execute()
+        if  user_email:
+            drive_service.permissions().create(fileId=file_id, body=permission, sendNotificationEmail=True).execute()
 
         # Generate edit and embed URLs
         base_url = "https://docs.google.com/"
