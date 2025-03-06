@@ -10,13 +10,15 @@ COPY . .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port from the .env file
-ARG PORT
+# Set a default value for PORT if it's not provided during build
+ARG PORT=8000
 ENV PORT=${PORT}
+
+# Expose the port to allow external access
 EXPOSE ${PORT}
 
-# Set executable permissions for the start script
-RUN chmod +x start.sh
+# Ensure start.sh has executable permissions
+RUN chmod +x /app/start.sh
 
-# Run the start script
+# Run the start script and keep the container running 
 CMD ["sh", "-c", "/app/start.sh"]
